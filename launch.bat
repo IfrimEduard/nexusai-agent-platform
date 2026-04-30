@@ -8,21 +8,20 @@ echo   NexusAI Agent Platform
 echo  ========================================
 echo.
 
-:: Check .env
-if not exist .env (
-    echo   [ERROR] No .env file found. Run setup.bat first.
+:: Auto-setup if needed
+if not exist node_modules (
+    echo   First run detected - setting up...
     echo.
-    pause
-    exit /b 1
+    call setup.bat
+    if %ERRORLEVEL% neq 0 exit /b 1
 )
 
-:: Check node_modules
-if not exist node_modules (
-    echo   Installing dependencies...
-    call npm install --loglevel=error
-    if %ERRORLEVEL% neq 0 (
-        echo   [ERROR] Failed to install dependencies.
-        echo.
+:: Check .env
+if not exist .env (
+    if exist .env.example (
+        copy .env.example .env >nul
+    ) else (
+        echo   [ERROR] No .env file. Run setup.bat first.
         pause
         exit /b 1
     )
@@ -36,22 +35,21 @@ if %ERRORLEVEL% equ 0 (
     if %ERRORLEVEL% equ 0 (
         echo   [OK] Ollama running - local models available
     ) else (
-        echo   [INFO] Ollama installed but not running
-        echo   Start it from Start Menu or run: ollama serve
+        echo   [INFO] Ollama installed but not running - start from Start Menu
     )
 ) else (
-    echo   [INFO] Ollama not installed - install from https://ollama.com for local models
+    echo   [INFO] Ollama not installed - get it from https://ollama.com
 )
 
 echo.
-echo   Starting dev server...
-echo   App will open at http://localhost:5173
+echo   Starting NexusAI...
+echo   Open your browser at: http://localhost:5173
 echo.
-echo   Local models: Models ^> Local Models to scan, import, or install
+echo   Press Ctrl+C to stop the server
 echo.
 
 :: Open browser after delay
 start "" /b cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:5173"
 
-:: Start dev server (this keeps the window open)
+:: Start dev server
 call npm run dev

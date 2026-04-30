@@ -17,7 +17,6 @@ ok()     { echo -e "  ${GREEN}OK${NC} $1"; }
 warn()   { echo -e "  ${YELLOW}WARN${NC} $1"; }
 fail()   { echo -e "  ${RED}FAIL${NC} $1"; }
 
-# Detect Windows (Git Bash / MSYS / WSL)
 is_windows() {
   [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]
 }
@@ -27,8 +26,7 @@ is_windows() {
 # ----------------------------------------------------------
 step "Checking Node.js..."
 if command -v node &>/dev/null; then
-  NODE_VERSION=$(node -v)
-  ok "Node.js $NODE_VERSION found"
+  ok "Node.js $(node -v) found"
 else
   if is_windows; then
     fail "Node.js not found. Download from https://nodejs.org and install the LTS version."
@@ -72,55 +70,22 @@ fi
 ok "Dependencies installed"
 
 # ----------------------------------------------------------
-# 4. Configure environment
+# 4. Configure environment (auto-configured!)
 # ----------------------------------------------------------
 step "Configuring environment..."
 
 if [ ! -f .env ]; then
   if [ -f .env.example ]; then
     cp .env.example .env
-    warn ".env created from .env.example"
-    echo ""
-    echo -e "  ${YELLOW}${BOLD}ACTION REQUIRED:${NC}"
-    echo -e "  Open ${BOLD}.env${NC} and fill in your Supabase credentials:"
-    echo -e "  ${CYAN}VITE_SUPABASE_URL${NC}     = your project URL"
-    echo -e "  ${CYAN}VITE_SUPABASE_ANON_KEY${NC} = your anon key"
-    echo ""
-    echo -e "  Get them from: ${CYAN}https://supabase.com/dashboard${NC} > Project Settings > API"
-    echo ""
-
-    if is_windows; then
-      echo -e "  Opening .env in Notepad..."
-      notepad.exe .env 2>/dev/null || start notepad.exe .env 2>/dev/null || true
-    elif command -v code &>/dev/null; then
-      echo -e "  Opening .env in VS Code..."
-      code .env 2>/dev/null || true
-    elif command -v nano &>/dev/null; then
-      echo -e "  Opening .env in nano..."
-      nano .env
-    else
-      echo -e "  Edit .env manually, then re-run this script."
-      read -p "Press Enter to exit..."
-      exit 0
-    fi
+    ok ".env created with Supabase credentials (pre-configured)"
   else
-    echo "VITE_SUPABASE_URL=https://your-project-id.supabase.co" > .env
-    echo "VITE_SUPABASE_ANON_KEY=your-anon-key-here" >> .env
+    echo "VITE_SUPABASE_URL=https://ebgxlnfpbsovnhtkzknz.supabase.co" > .env
+    echo "VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViZ3hsbmZwYnNvdm5odGt6a256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczODQyODksImV4cCI6MjA5Mjk2MDI4OX0.sr-lbLwBsYvoA5WpF_5bgCGNS3BRxHfkrM43YrW06ws" >> .env
     echo "VITE_OLLAMA_URL=http://localhost:11434" >> .env
-    warn ".env created with placeholders - edit before continuing"
-    read -p "Press Enter to exit..."
-    exit 0
+    ok ".env created with Supabase credentials"
   fi
 else
   ok ".env already exists"
-fi
-
-# Validate .env has real values (not placeholders)
-if grep -q "your-project-id" .env 2>/dev/null || grep -q "your-anon-key-here" .env 2>/dev/null; then
-  warn ".env still has placeholder values"
-  echo -e "  Edit ${BOLD}.env${NC} with your real Supabase credentials, then re-run this script."
-  read -p "Press Enter to exit..."
-  exit 0
 fi
 
 # ----------------------------------------------------------
@@ -136,7 +101,7 @@ if command -v ollama &>/dev/null; then
       warn "Ollama not running. Start it with: ollama serve"
     fi
   else
-    MODEL_COUNT=$(curl -s http://localhost:11434/api/tags | python -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
+    MODEL_COUNT=$(curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
     ok "Ollama running with $MODEL_COUNT model(s)"
   fi
 else
@@ -163,7 +128,7 @@ fi
 # ----------------------------------------------------------
 echo ""
 echo -e "${GREEN}${BOLD}========================================${NC}"
-echo -e "${GREEN}${BOLD}  NexusAI Agent Platform is ready!${NC}"
+echo -e "${GREEN}${BOLD}  NexusAI is ready!${NC}"
 echo -e "${GREEN}${BOLD}========================================${NC}"
 echo ""
 if is_windows; then

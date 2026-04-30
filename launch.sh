@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  NexusAI - Desktop Launch Script
+#  NexusAI - One-Click Launch
 #  Starts the dev server and opens the app in your browser
 #  Windows: double-click launch.bat instead
 # ============================================================
@@ -18,23 +18,31 @@ is_windows() {
 echo -e "${CYAN}${BOLD}NexusAI Agent Platform${NC}"
 echo ""
 
-# Check .env exists
-if [ ! -f .env ]; then
-  echo -e "  ${YELLOW}No .env file found. Run setup.sh (or setup.bat on Windows) first.${NC}"
-  read -p "Press Enter to exit..."
-  exit 1
+# Auto-setup if needed
+if [ ! -d node_modules ]; then
+  echo -e "  ${YELLOW}First run detected - running setup...${NC}"
+  echo ""
+  chmod +x setup.sh 2>/dev/null
+  ./setup.sh --run
+  exit $?
 fi
 
-# Check dependencies
-if [ ! -d node_modules ]; then
-  echo -e "  Installing dependencies..."
-  npm install --loglevel=error
+# Auto-create .env if missing
+if [ ! -f .env ]; then
+  if [ -f .env.example ]; then
+    cp .env.example .env
+    echo -e "  ${GREEN}OK${NC} .env created"
+  else
+    echo -e "  ${YELLOW}No .env file found. Run setup.sh first.${NC}"
+    read -p "Press Enter to exit..."
+    exit 1
+  fi
 fi
 
 # Check Ollama status
 if command -v ollama &>/dev/null; then
   if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
-    MODEL_COUNT=$(curl -s http://localhost:11434/api/tags | python -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
+    MODEL_COUNT=$(curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
     echo -e "  ${GREEN}Ollama:${NC} running with ${MODEL_COUNT} model(s) available"
   else
     if is_windows; then
@@ -52,9 +60,9 @@ else
 fi
 
 echo ""
-echo -e "  Starting dev server..."
-echo -e "  App will open at ${GREEN}http://localhost:5173${NC}"
-echo -e "  Local models: ${CYAN}Models > Local Models${NC} to scan, import, or install"
+echo -e "  Starting NexusAI..."
+echo -e "  Open your browser at: ${GREEN}http://localhost:5173${NC}"
+echo -e "  Press Ctrl+C to stop the server"
 echo ""
 
 # Open browser after a short delay
