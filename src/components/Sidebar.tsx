@@ -16,7 +16,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export type Page =
   | 'dashboard'
@@ -155,11 +157,20 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="flex items-center gap-2 px-4 py-3 border-t border-[#1e2d3d]">
-        <span className="pulse-dot w-2 h-2 rounded-full bg-emerald-400" />
-        {!collapsed && (
-          <span className="text-xs text-slate-400">System Online</span>
-        )}
+      <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e2d3d]">
+        <div className="flex items-center gap-2">
+          <span className="pulse-dot w-2 h-2 rounded-full bg-emerald-400" />
+          {!collapsed && (
+            <span className="text-xs text-slate-400">System Online</span>
+          )}
+        </div>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          title="Sign Out"
+          className="p-1 rounded hover:bg-[#1e2d3d] text-slate-500 hover:text-rose-400 transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
       </div>
     </aside>
   );

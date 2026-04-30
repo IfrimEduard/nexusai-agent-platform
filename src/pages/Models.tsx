@@ -115,6 +115,11 @@ export default function Models() {
   async function importOllamaModel(om: OllamaModel) {
     setImporting(om.name);
     const userId = await getUserId();
+    if (!userId) {
+      alert('You must be signed in to import models.');
+      setImporting(null);
+      return;
+    }
     const sizeGB = (om.size / (1024 * 1024 * 1024)).toFixed(1);
     const family = om.details?.families?.[0] || om.details?.family || 'unknown';
     const isVision = family.includes('llava') || family.includes('vision') || om.name.includes('vision');
@@ -147,7 +152,8 @@ export default function Models() {
       created_by: userId,
     };
 
-    await supabase.from('ai_models').insert(newModel);
+    const { error } = await supabase.from('ai_models').insert(newModel);
+    if (error) alert(`Import failed: ${error.message}`);
     setImporting(null);
     load();
   }
@@ -160,6 +166,11 @@ export default function Models() {
     if (!manualForm.name) return;
     setImporting('manual');
     const userId = await getUserId();
+    if (!userId) {
+      alert('You must be signed in to import models.');
+      setImporting(null);
+      return;
+    }
     const fileName = manualFile?.name || '';
 
     const newModel = {
@@ -188,7 +199,8 @@ export default function Models() {
       created_by: userId,
     };
 
-    await supabase.from('ai_models').insert(newModel);
+    const { error } = await supabase.from('ai_models').insert(newModel);
+    if (error) alert(`Import failed: ${error.message}`);
     setManualForm({ name: '', model_type: 'llm', family: '', parameter_size: '', quantization: '', context_length: 4096, vision_capable: false, tool_use_capable: true });
     setManualFile(null);
     setImporting(null);
@@ -219,10 +231,16 @@ export default function Models() {
 
   async function save() {
     const userId = await getUserId();
+    if (!userId) {
+      alert('You must be signed in to save models.');
+      return;
+    }
     if (editing) {
-      await supabase.from('ai_models').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editing.id);
+      const { error } = await supabase.from('ai_models').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editing.id);
+      if (error) alert(`Update failed: ${error.message}`);
     } else {
-      await supabase.from('ai_models').insert({ ...form, created_by: userId });
+      const { error } = await supabase.from('ai_models').insert({ ...form, created_by: userId });
+      if (error) alert(`Create failed: ${error.message}`);
     }
     setShowModal(false);
     setEditing(null);
@@ -280,6 +298,7 @@ export default function Models() {
         </div>
       </div>
 
+      {/* Local Models Panel */}
       {showOllamaPanel && (
         <div className="card p-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -304,6 +323,7 @@ export default function Models() {
             </div>
           </div>
 
+          {/* Tabs */}
           <div className="flex gap-1 bg-[#0a0e17] rounded-lg p-1 border border-[#1e2d3d]">
             {[
               { key: 'detected', label: 'Detected', icon: Cpu },
@@ -321,6 +341,7 @@ export default function Models() {
             ))}
           </div>
 
+          {/* Tab: Detected Models */}
           {localTab === 'detected' && (
             <div className="space-y-3">
               {!ollamaConnected && !ollamaLoading && (
@@ -381,11 +402,13 @@ export default function Models() {
             </div>
           )}
 
+          {/* Tab: Manual Import */}
           {localTab === 'manual' && (
             <div className="space-y-4">
               <div className="bg-[#0a0e17] rounded-lg p-4 border border-[#1e2d3d] space-y-4">
                 <p className="text-xs text-slate-400">Import a model file (GGUF, safetensors, etc.) from your computer. Works with any model, not just Ollama.</p>
 
+                {/* File picker */}
                 <div>
                   <label className="text-xs text-slate-400 mb-1.5 block">Model File</label>
                   <input
@@ -425,6 +448,7 @@ export default function Models() {
                   </button>
                 </div>
 
+                {/* Model details */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-slate-400 mb-1 block">Model Name</label>
@@ -470,6 +494,7 @@ export default function Models() {
                 </button>
               </div>
 
+              {/* Or enter a custom Ollama model name */}
               <div className="bg-[#0a0e17] rounded-lg p-4 border border-[#1e2d3d] space-y-3">
                 <div className="flex items-center gap-2">
                   <Server className="w-4 h-4 text-cyan-400" />
@@ -481,6 +506,7 @@ export default function Models() {
             </div>
           )}
 
+          {/* Tab: Install New */}
           {localTab === 'install' && (
             <div className="space-y-4">
               {!ollamaConnected ? (
@@ -490,6 +516,7 @@ export default function Models() {
                 </div>
               ) : (
                 <>
+                  {/* Search */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
@@ -500,6 +527,7 @@ export default function Models() {
                     />
                   </div>
 
+                  {/* Popular models grid */}
                   <div className="grid gap-2 md:grid-cols-2">
                     {filteredPopular.map((pm) => {
                       const pulled = isModelPulled(pm.name);
@@ -546,6 +574,7 @@ export default function Models() {
                     })}
                   </div>
 
+                  {/* Custom model pull */}
                   <div className="bg-[#0a0e17] rounded-lg p-4 border border-[#1e2d3d] space-y-3">
                     <h4 className="text-sm font-medium text-slate-100">Pull a specific model</h4>
                     <p className="text-xs text-slate-400">Enter any model name from <a href="https://ollama.com/library" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">ollama.com/library</a> or a HuggingFace GGUF repo.</p>
@@ -700,7 +729,12 @@ function CustomOllamaInput({ onAdded }: { onAdded: () => void }) {
     if (!name.trim()) return;
     setAdding(true);
     const userId = await getUserId();
-    await supabase.from('ai_models').insert({
+    if (!userId) {
+      alert('You must be signed in to add models.');
+      setAdding(false);
+      return;
+    }
+    const { error } = await supabase.from('ai_models').insert({
       name: name.trim(),
       provider: 'local',
       model_type: 'llm',
@@ -719,6 +753,7 @@ function CustomOllamaInput({ onAdded }: { onAdded: () => void }) {
       parameters: { ollama_model: name.trim(), source: 'custom_ollama' },
       created_by: userId,
     });
+    if (error) alert(`Add failed: ${error.message}`);
     setName('');
     setAdding(false);
     onAdded();

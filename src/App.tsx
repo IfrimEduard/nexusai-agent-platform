@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar, { type Page } from './components/Sidebar';
+import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Skills from './pages/Skills';
 import Governance from './pages/Governance';
@@ -15,6 +16,7 @@ import Patterns from './pages/Patterns';
 import Frameworks from './pages/Frameworks';
 import Evolution from './pages/Evolution';
 import Config from './pages/Config';
+import { supabase } from './lib/supabase';
 
 const pages: Record<Page, React.FC> = {
   dashboard: Dashboard,
@@ -36,6 +38,32 @@ const pages: Record<Page, React.FC> = {
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [session, setSession] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(!!s);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(!!s);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (session === null) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0e17]">
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
   const PageComponent = pages[currentPage];
 
   return (
