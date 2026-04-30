@@ -3,11 +3,18 @@ import Sidebar, { type Page } from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Skills from './pages/Skills';
 import Governance from './pages/Governance';
-import {
-  ChatRoom, Models, Plugins, Brain, Automation,
-  AutoHeal, AutoGrow, AutoLearn, Patterns, Frameworks,
-  Evolution, Config
-} from './pages/Placeholders';
+import ChatRoom from './pages/ChatRoom';
+import Models from './pages/Models';
+import Plugins from './pages/Plugins';
+import Brain from './pages/Brain';
+import Automation from './pages/Automation';
+import AutoHeal from './pages/AutoHeal';
+import AutoGrow from './pages/AutoGrow';
+import AutoLearn from './pages/AutoLearn';
+import Patterns from './pages/Patterns';
+import Frameworks from './pages/Frameworks';
+import Evolution from './pages/Evolution';
+import Config from './pages/Config';
 
 const pages: Record<Page, React.FC> = {
   dashboard: Dashboard,

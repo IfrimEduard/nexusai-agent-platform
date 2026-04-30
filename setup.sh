@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
 # ============================================================
 #  NexusAI Agent Platform - One-Click Setup
 #  Run:  chmod +x setup.sh && ./setup.sh
+#  Windows: double-click setup.bat instead
 # ============================================================
 
 BOLD='\033[1m'
@@ -16,7 +15,12 @@ NC='\033[0m'
 step()   { echo -e "\n${CYAN}${BOLD}==>${NC} ${BOLD}$1${NC}"; }
 ok()     { echo -e "  ${GREEN}OK${NC} $1"; }
 warn()   { echo -e "  ${YELLOW}WARN${NC} $1"; }
-fail()   { echo -e "  ${RED}FAIL${NC} $1"; exit 1; }
+fail()   { echo -e "  ${RED}FAIL${NC} $1"; }
+
+# Detect Windows (Git Bash / MSYS / WSL)
+is_windows() {
+  [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]
+}
 
 # ----------------------------------------------------------
 # 1. Check Node.js
@@ -26,16 +30,20 @@ if command -v node &>/dev/null; then
   NODE_VERSION=$(node -v)
   ok "Node.js $NODE_VERSION found"
 else
-  warn "Node.js not found. Installing via nvm..."
-  if ! command -v nvm &>/dev/null && [ ! -d "$HOME/.nvm" ]; then
-    echo "  Installing nvm..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash >/dev/null 2>&1
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  if is_windows; then
+    fail "Node.js not found. Download from https://nodejs.org and install the LTS version."
+  else
+    warn "Node.js not found. Installing via nvm..."
+    if ! command -v nvm &>/dev/null && [ ! -d "$HOME/.nvm" ]; then
+      echo "  Installing nvm..."
+      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash >/dev/null 2>&1
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    fi
+    nvm install --lts >/dev/null 2>&1
+    nvm use --lts >/dev/null 2>&1
+    ok "Node.js $(node -v) installed"
   fi
-  nvm install --lts >/dev/null 2>&1
-  nvm use --lts >/dev/null 2>&1
-  ok "Node.js $(node -v) installed"
 fi
 
 # ----------------------------------------------------------
@@ -44,6 +52,11 @@ fi
 step "Checking npm..."
 if ! command -v npm &>/dev/null; then
   fail "npm not found. Please install Node.js from https://nodejs.org"
+  if is_windows; then
+    echo -e "  Download the LTS installer from ${CYAN}https://nodejs.org${NC}"
+  fi
+  read -p "Press Enter to exit..."
+  exit 1
 fi
 ok "npm $(npm -v)"
 
@@ -51,7 +64,11 @@ ok "npm $(npm -v)"
 # 3. Install dependencies
 # ----------------------------------------------------------
 step "Installing dependencies..."
-npm install --loglevel=error
+if ! npm install --loglevel=error; then
+  fail "npm install failed. Try: rm -rf node_modules && npm install"
+  read -p "Press Enter to exit..."
+  exit 1
+fi
 ok "Dependencies installed"
 
 # ----------------------------------------------------------
@@ -72,8 +89,10 @@ if [ ! -f .env ]; then
     echo -e "  Get them from: ${CYAN}https://supabase.com/dashboard${NC} > Project Settings > API"
     echo ""
 
-    # Check if we can open the file
-    if command -v code &>/dev/null; then
+    if is_windows; then
+      echo -e "  Opening .env in Notepad..."
+      notepad.exe .env 2>/dev/null || start notepad.exe .env 2>/dev/null || true
+    elif command -v code &>/dev/null; then
       echo -e "  Opening .env in VS Code..."
       code .env 2>/dev/null || true
     elif command -v nano &>/dev/null; then
@@ -81,13 +100,15 @@ if [ ! -f .env ]; then
       nano .env
     else
       echo -e "  Edit .env manually, then re-run this script."
+      read -p "Press Enter to exit..."
       exit 0
     fi
   else
-    echo -e "  VITE_SUPABASE_URL=https://your-project-id.supabase.co" > .env
-    echo -e "  VITE_SUPABASE_ANON_KEY=your-anon-key-here" >> .env
-    echo -e "  VITE_OLLAMA_URL=http://localhost:11434" >> .env
+    echo "VITE_SUPABASE_URL=https://your-project-id.supabase.co" > .env
+    echo "VITE_SUPABASE_ANON_KEY=your-anon-key-here" >> .env
+    echo "VITE_OLLAMA_URL=http://localhost:11434" >> .env
     warn ".env created with placeholders - edit before continuing"
+    read -p "Press Enter to exit..."
     exit 0
   fi
 else
@@ -98,6 +119,7 @@ fi
 if grep -q "your-project-id" .env 2>/dev/null || grep -q "your-anon-key-here" .env 2>/dev/null; then
   warn ".env still has placeholder values"
   echo -e "  Edit ${BOLD}.env${NC} with your real Supabase credentials, then re-run this script."
+  read -p "Press Enter to exit..."
   exit 0
 fi
 
@@ -108,14 +130,22 @@ step "Checking Ollama (optional - for local models)..."
 if command -v ollama &>/dev/null; then
   ok "Ollama found: $(ollama --version 2>/dev/null || echo 'installed')"
   if ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
-    warn "Ollama not running. Start it with: ollama serve"
+    if is_windows; then
+      warn "Ollama not running. Start it from your Start Menu or run: ollama serve"
+    else
+      warn "Ollama not running. Start it with: ollama serve"
+    fi
   else
-    MODEL_COUNT=$(curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
+    MODEL_COUNT=$(curl -s http://localhost:11434/api/tags | python -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('models',[])))" 2>/dev/null || echo "?")
     ok "Ollama running with $MODEL_COUNT model(s)"
   fi
 else
   warn "Ollama not installed. Install from https://ollama.com for local model support"
-  echo "  After installing: ollama pull llama3.1 && ollama serve"
+  if is_windows; then
+    echo "  Download from https://ollama.com/download/windows"
+  else
+    echo "  After installing: ollama pull llama3.1 && ollama serve"
+  fi
 fi
 
 # ----------------------------------------------------------
@@ -136,8 +166,13 @@ echo -e "${GREEN}${BOLD}========================================${NC}"
 echo -e "${GREEN}${BOLD}  NexusAI Agent Platform is ready!${NC}"
 echo -e "${GREEN}${BOLD}========================================${NC}"
 echo ""
-echo -e "  Start the app:   ${CYAN}npm run dev${NC}"
-echo -e "  Or use desktop:  ${CYAN}./launch.sh${NC}"
+if is_windows; then
+  echo -e "  Start the app:   ${CYAN}launch.bat${NC} (double-click)"
+  echo -e "  Or in terminal:  ${CYAN}npm run dev${NC}"
+else
+  echo -e "  Start the app:   ${CYAN}npm run dev${NC}"
+  echo -e "  Or use desktop:  ${CYAN}./launch.sh${NC}"
+fi
 echo ""
 echo -e "  The app will open at ${CYAN}http://localhost:5173${NC}"
 echo ""
@@ -146,4 +181,6 @@ echo ""
 if [ "${1:-}" = "--run" ] || [ "${1:-}" = "-r" ]; then
   step "Launching NexusAI..."
   npm run dev
+else
+  read -p "Press Enter to exit..."
 fi
