@@ -21,7 +21,7 @@ const Toggle: React.FC<ToggleProps> = ({ enabled, onChange }) => {
           enabled
             ? "translate-x-4 bg-white"
             : "translate-x-0.5 bg-slate-500"
-        }`}
+        }`
       />
     </button>
   );
