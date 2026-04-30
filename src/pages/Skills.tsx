@@ -8,10 +8,19 @@ import {
   Zap,
   Layers,
   ChevronDown,
-  Brain,
+  Brain as BrainIcon,
   Cpu,
   Dna,
   Shield,
+  MessageSquare,
+  Puzzle,
+  Bot,
+  Activity,
+  TrendingUp,
+  GraduationCap,
+  Hexagon,
+  GitBranch,
+  Settings,
 } from 'lucide-react';
 import Modal from '../components/Modal';
 import Toggle from '../components/Toggle';
@@ -41,51 +50,23 @@ const LAYERS: {
   border: string;
   description: string;
 }[] = [
-  {
-    key: 'essential',
-    label: 'Essential',
-    icon: Shield,
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
-    description: 'Fundamental AI capabilities',
-  },
-  {
-    key: 'core',
-    label: 'Core',
-    icon: Brain,
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/20',
-    description: 'Foundational engineering skills',
-  },
-  {
-    key: 'advanced',
-    label: 'Advanced',
-    icon: Cpu,
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/20',
-    description: 'Specialized domain capabilities',
-  },
-  {
-    key: 'autonomous',
-    label: 'Autonomous',
-    icon: Zap,
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-    description: 'Self-directed operation skills',
-  },
-  {
-    key: 'evolutionary',
-    label: 'Evolutionary',
-    icon: Dna,
-    color: 'text-rose-400',
-    bg: 'bg-rose-500/10',
-    border: 'border-rose-500/20',
-    description: 'Meta-improvement skills',
-  },
+  { key: 'essential', label: 'Essential', icon: Shield, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', description: 'Fundamental AI capabilities' },
+  { key: 'core', label: 'Core', icon: BrainIcon, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', description: 'Foundational engineering skills' },
+  { key: 'advanced', label: 'Advanced', icon: Cpu, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', description: 'Specialized domain capabilities' },
+  { key: 'autonomous', label: 'Autonomous', icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', description: 'Self-directed operation skills' },
+  { key: 'evolutionary', label: 'Evolutionary', icon: Dna, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', description: 'Meta-improvement skills' },
+  { key: 'agent', label: 'Agent', icon: Bot, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', description: 'Goal management and execution' },
+  { key: 'chat', label: 'Chat', icon: MessageSquare, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', description: 'Conversational intelligence' },
+  { key: 'model', label: 'Model', icon: Cpu, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', description: 'Multi-model orchestration' },
+  { key: 'plugin', label: 'Plugin', icon: Puzzle, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', description: 'Plugin ecosystem management' },
+  { key: 'brain', label: 'Brain', icon: BrainIcon, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', description: 'Memory and reasoning' },
+  { key: 'rules', label: 'Rules', icon: Shield, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', description: 'Policy and compliance' },
+  { key: 'auto-heal', label: 'Auto-Heal', icon: Activity, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', description: 'Self-healing and recovery' },
+  { key: 'auto-grow', label: 'Auto-Grow', icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', description: 'Growth and scaling' },
+  { key: 'auto-learn', label: 'Auto-Learn', icon: GraduationCap, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', description: 'Learning and adaptation' },
+  { key: 'patterns', label: 'Patterns', icon: Hexagon, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', description: 'Pattern recognition' },
+  { key: 'frameworks', label: 'Frameworks', icon: GitBranch, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', description: 'Architecture and composition' },
+  { key: 'meta', label: 'Meta', icon: Settings, color: 'text-slate-300', bg: 'bg-slate-500/10', border: 'border-slate-500/20', description: 'System-wide meta skills' },
 ];
 
 const SKILL_TYPES = [
@@ -103,13 +84,25 @@ const LAYER_ORDER: Record<string, number> = {
   advanced: 2,
   autonomous: 3,
   evolutionary: 4,
+  agent: 5,
+  chat: 6,
+  model: 7,
+  plugin: 8,
+  brain: 9,
+  rules: 10,
+  'auto-heal': 11,
+  'auto-grow': 12,
+  'auto-learn': 13,
+  patterns: 14,
+  frameworks: 15,
+  meta: 16,
 };
 
 const layerMeta = (key: string) =>
   LAYERS.find((l) => l.key === key) ?? LAYERS[0];
 
 const skillTypeColor: Record<string, string> = {
-  cognitive: 'text-purple-400 bg-purple-500/10',
+  cognitive: 'text-cyan-400 bg-cyan-500/10',
   technical: 'text-cyan-400 bg-cyan-500/10',
   perceptual: 'text-blue-400 bg-blue-500/10',
   operational: 'text-emerald-400 bg-emerald-500/10',
